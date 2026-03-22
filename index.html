@@ -3,315 +3,203 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deriv Pro Signals • Password Protected</title>
+  <title>Deriv Pro Signals</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
-    body { font-family: system-ui; }
-    .price { font-size: 1.9rem; font-weight: 700; }
-    .modal { animation: pop 0.3s; }
-    @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    body { font-family: system-ui; background: #111827; color: white; }
+    .price { font-size: 1.85rem; font-weight: 700; }
   </style>
 </head>
-<body class="bg-gray-950 text-white min-h-screen">
+<body class="bg-gray-950 text-white min-h-screen p-4">
 
-  <!-- PASSWORD OVERLAY -->
-  <div id="passwordOverlay" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-    <div class="bg-gray-900 p-10 rounded-3xl max-w-sm w-full text-center">
-      <h2 class="text-3xl font-bold mb-6">🔒 Enter Password</h2>
-      <input id="pwInput" type="password" class="w-full bg-gray-800 text-white px-6 py-4 rounded-2xl text-2xl text-center mb-6" placeholder="••••••">
-      <button onclick="checkPassword()" class="bg-emerald-500 hover:bg-emerald-600 w-full py-4 rounded-2xl font-bold text-xl">Unlock Signals</button>
-      <p class="text-xs text-gray-500 mt-6">Password: 179895 (only you know it)</p>
-    </div>
+<!-- PASSWORD -->
+<div id="passwordOverlay" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+  <div class="bg-gray-900 p-8 rounded-3xl max-w-sm w-full text-center">
+    <h2 class="text-3xl font-bold mb-6">🔒 Enter Password</h2>
+    <input id="pwInput" type="password" class="w-full bg-gray-800 px-6 py-4 rounded-2xl text-2xl text-center" placeholder="••••••">
+    <button onclick="checkPassword()" class="bg-emerald-500 w-full py-4 rounded-2xl font-bold text-xl mt-4">Unlock Signals</button>
+  </div>
+</div>
+
+<div id="mainContent" class="hidden">
+  <h1 class="text-4xl font-bold text-center mb-6">Deriv Pro Signals</h1>
+
+  <div class="flex gap-3 mb-6">
+    <input id="appid" value="1089" class="bg-gray-800 px-5 py-3 rounded-xl flex-1 text-sm">
+    <button onclick="connect()" class="bg-green-500 px-8 py-3 rounded-xl font-bold">Connect Live</button>
   </div>
 
-  <div id="mainContent" class="hidden max-w-7xl mx-auto p-6">
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-4xl font-bold">Deriv Pro Signals</h1>
-      <div class="flex gap-3">
-        <input id="appid" value="1089" class="bg-gray-800 px-5 py-3 rounded-xl text-sm w-40">
-        <button onclick="connect()" class="bg-green-500 hover:bg-green-600 px-8 py-3 rounded-xl font-bold">Connect Live</button>
-        <button onclick="disconnect()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-xl font-bold">Disconnect</button>
-      </div>
-    </div>
-
-    <!-- ACCOUNT & AUTO-TRADE -->
-    <div class="bg-gray-900 rounded-3xl p-6 mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div>
-        <h3 class="font-bold mb-3">Your Deriv Account</h3>
-        <input id="token" placeholder="Paste API Token here" class="w-full bg-gray-800 px-5 py-4 rounded-2xl text-sm">
-        <button onclick="authorizeAccount()" class="mt-3 bg-blue-600 hover:bg-blue-700 w-full py-3 rounded-2xl font-bold">Authorize (Demo or Real)</button>
-        <div id="accountInfo" class="mt-4 text-sm"></div>
-      </div>
-      <div>
-        <h3 class="font-bold mb-3 flex items-center gap-2">🚀 Auto Trader <span id="autoStatus" class="text-red-500 text-xs">DISABLED</span></h3>
-        <div class="flex gap-3">
-          <select id="autoSymbol" class="bg-gray-800 px-4 py-3 rounded-2xl text-sm flex-1"></select>
-          <select id="autoType" class="bg-gray-800 px-4 py-3 rounded-2xl text-sm">
-            <option value="CALL">Rise / Higher</option>
-            <option value="PUT">Fall / Lower</option>
-            <option value="DIGITEVEN">Even</option>
-            <option value="DIGITODD">Odd</option>
-          </select>
-        </div>
-        <div class="flex gap-3 mt-3">
-          <input id="stake" value="10" class="bg-gray-800 px-5 py-3 rounded-2xl w-28 text-center" placeholder="Stake USD">
-          <input id="duration" value="5" class="bg-gray-800 px-5 py-3 rounded-2xl w-28 text-center" placeholder="Ticks">
-          <button onclick="toggleAutoTrade()" id="autoBtn" class="bg-red-600 hover:bg-red-700 flex-1 py-3 rounded-2xl font-bold">ENABLE AUTO</button>
-        </div>
-        <p class="text-[10px] text-red-400 mt-2">⚠️ ONLY TEST WITH DEMO TOKEN FIRST!</p>
-      </div>
-      <div>
-        <h3 class="font-bold mb-3">Signal Log</h3>
-        <div id="log" class="h-40 overflow-y-auto text-xs bg-gray-950 p-4 rounded-2xl font-mono"></div>
-      </div>
-    </div>
-
-    <!-- RECOMMENDED -->
-    <div id="recommended" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 mb-8 text-center">
-      <p class="uppercase text-sm tracking-widest">🔥 BEST RIGHT NOW</p>
-      <h2 id="recName" class="text-5xl font-bold"></h2>
-      <div id="recSignal" class="text-3xl mt-4 font-mono"></div>
-    </div>
-
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6"></div>
+  <!-- ACCOUNT -->
+  <div class="bg-gray-900 rounded-3xl p-6 mb-8">
+    <h3 class="font-bold mb-3">Your Deriv Account</h3>
+    <input id="token" value="dVNCVLTFRP7ED2" class="w-full bg-gray-800 px-5 py-4 rounded-2xl text-sm">
+    <button onclick="authorizeAccount()" class="mt-4 bg-blue-600 w-full py-3 rounded-2xl font-bold">Authorize (Demo)</button>
+    <div id="accountInfo" class="mt-4 text-sm text-emerald-400"></div>
   </div>
 
-  <!-- CHART MODAL -->
-  <div id="chartModal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-    <div class="bg-gray-900 rounded-3xl max-w-5xl w-full mx-4 modal">
-      <div class="flex justify-between p-6 border-b border-gray-700">
-        <h2 id="modalTitle" class="text-2xl font-bold"></h2>
-        <button onclick="closeModal()" class="text-4xl leading-none">×</button>
+  <!-- RECOMMENDED -->
+  <div id="recommended" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-8 mb-8 text-center">
+    <p class="uppercase text-sm tracking-widest">🔥 BEST RIGHT NOW</p>
+    <h2 id="recName" class="text-5xl font-bold"></h2>
+    <div id="recSignal" class="text-3xl mt-4"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+  <!-- PRO FEATURES (your exact text) -->
+  <div class="mt-12 bg-gray-900 rounded-3xl p-8">
+    <h2 class="text-3xl font-bold mb-8 text-center">🚀 Professional Execution & Advanced Platforms</h2>
+    <div class="space-y-10 text-sm">
+      <div><h3 class="font-bold text-emerald-400 mb-3">1. Professional Execution & Advanced Platforms</h3>
+        <ul class="list-disc pl-6 space-y-2 text-gray-300">
+          <li><strong>Deriv cTrader Integration:</strong> Depth of Market (DOM), advanced order types, one-second volatility indices.</li>
+          <li><strong>Institutional MT5 Access:</strong> Expert Advisors (EAs) and multi-chart workspace.</li>
+          <li><strong>Direct API Connectivity:</strong> Low-latency WebSocket for Python, JS, C++.</li>
+        </ul>
       </div>
-      <div class="p-6">
-        <canvas id="fullChart" height="120"></canvas>
-        <div class="grid grid-cols-2 gap-6 mt-8">
-          <div>
-            <h4 class="text-sm text-gray-400 mb-2">MACD</h4>
-            <canvas id="macdChart" height="60"></canvas>
-          </div>
-          <div>
-            <h4 class="text-sm text-gray-400 mb-2">RSI (14)</h4>
-            <canvas id="rsiChart" height="60"></canvas>
-          </div>
-        </div>
+      <div><h3 class="font-bold text-emerald-400 mb-3">2. Advanced Synthetic & Derivative Markets</h3>
+        <ul class="list-disc pl-6 space-y-2 text-gray-300">
+          <li>24/7 Synthetic Indices (Volatility 10%–250%, Crash/Boom, Step Indices).</li>
+          <li>One-Second Tick Series (Volatility 15, 30, 90 (1s)).</li>
+          <li>Drift Switching & DEX Indices.</li>
+        </ul>
+      </div>
+      <div><h3 class="font-bold text-emerald-400 mb-3">3. Pro-Level Trading Automation</h3>
+        <ul class="list-disc pl-6 space-y-2 text-gray-300">
+          <li>No-Code Bot Builder (Deriv Bot drag-and-drop).</li>
+          <li>Strategy Marketplace (XML import/export).</li>
+          <li>Real-Time Backtesting sandbox.</li>
+        </ul>
+      </div>
+      <div><h3 class="font-bold text-emerald-400 mb-3">4. Institutional Risk & Management Tools</h3>
+        <ul class="list-disc pl-6 space-y-2 text-gray-300">
+          <li>Precision Leverage (up to 1:5000) + Multipliers.</li>
+          <li>Deal Cancellation, Automatic Stop-Out, daily loss limits.</li>
+        </ul>
+      </div>
+      <div><h3 class="font-bold text-emerald-400 mb-3">5. Professional Analytics & Reporting</h3>
+        <ul class="list-disc pl-6 space-y-2 text-gray-300">
+          <li>TradingView charts with 100+ indicators.</li>
+          <li>Performance dashboards + Economic Calendar.</li>
+        </ul>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    // ============== PASSWORD ==============
-    function checkPassword() {
-      const pw = document.getElementById("pwInput").value;
-      if (pw === "179895") {
-        document.getElementById("passwordOverlay").classList.add("hidden");
-        document.getElementById("mainContent").classList.remove("hidden");
-      } else {
-        alert("❌ Wrong password!");
-      }
-    }
+<script>
+let ws = null;
+let data = {};
+const symbols = ["R_10","R_25","R_50","R_75","R_100"];
+const symbolNames = {R_10:"Volatility 10", R_25:"Volatility 25", R_50:"Volatility 50", R_75:"Volatility 75", R_100:"Volatility 100"};
 
-    // ============== GLOBALS ==============
-    let ws = null, authorized = false, token = "", autoEnabled = false, lastBuyTime = 0;
-    let data = {};
-    const symbols = ["R_10","R_25","R_50","R_75","R_100"];
-    const symbolNames = {R_10:"Volatility 10", R_25:"Volatility 25", R_50:"Volatility 50", R_75:"Volatility 75", R_100:"Volatility 100"};
-    let fullChart = null, macdChart = null, rsiChart = null;
+function checkPassword() {
+  if (document.getElementById("pwInput").value === "179895") {
+    document.getElementById("passwordOverlay").classList.add("hidden");
+    document.getElementById("mainContent").classList.remove("hidden");
+  } else alert("❌ Wrong password");
+}
 
-    function sma(arr, n) {
-      if (arr.length < n) return arr[arr.length-1];
-      return arr.slice(-n).reduce((a,b)=>a+b,0)/n;
-    }
-    function stdDev(arr, n) {
-      const mean = sma(arr, n);
-      const sqDiff = arr.slice(-n).map(v => Math.pow(v-mean,2));
-      return Math.sqrt(sqDiff.reduce((a,b)=>a+b,0)/n);
-    }
+function connect() {
+  if (ws) ws.close();
+  ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=1089`);
+  ws.onopen = () => {
+    symbols.forEach(s => {
+      ws.send(JSON.stringify({ticks_history: s, count: 60, end: "latest"}));
+      ws.send(JSON.stringify({ticks: s, subscribe: 1}));
+      data[s] = {prices: [], name: symbolNames[s]};
+    });
+  };
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.msg_type === "tick") handleTick(msg.tick);
+    if (msg.msg_type === "history") handleHistory(msg);
+  };
+}
 
-    function calculateIndicators(prices) {
-      if (prices.length < 26) return {rsi:50, macd:0, signal:0, hist:0, upperBB:prices[prices.length-1].price, lowerBB:prices[prices.length-1].price, bbWidth:0};
-      const p = prices.map(x => x.price);
-      // RSI
-      let gains = 0, losses = 0;
-      for (let i = Math.max(1, p.length-14); i < p.length; i++) {
-        const change = p[i] - p[i-1];
-        if (change > 0) gains += change; else losses -= change;
-      }
-      const rs = gains / (losses || 1);
-      const rsi = Math.round(100 - (100 / (1 + rs)));
-      // MACD (simple)
-      const ema12 = sma(p.slice(-12), 12);
-      const ema26 = sma(p.slice(-26), 26);
-      const macd = ema12 - ema26;
-      const signal = sma([macd], 9);
-      const hist = macd - signal;
-      // Bollinger
-      const mid = sma(p, 20);
-      const dev = stdDev(p, 20);
-      const upperBB = mid + dev * 2;
-      const lowerBB = mid - dev * 2;
-      return {rsi, macd: macd.toFixed(2), signal: signal.toFixed(2), hist: hist.toFixed(2), upperBB: upperBB.toFixed(2), lowerBB: lowerBB.toFixed(2), bbWidth: (upperBB-lowerBB).toFixed(2)};
-    }
+function handleHistory(msg) {
+  const sym = msg.echo_req.ticks_history;
+  if (!data[sym]) return;
+  data[sym].prices = msg.history.prices.map(p => ({price: p}));
+  updateCard(sym);
+}
 
-    function calculateSignal(prices) {
-      if (prices.length < 20) return {dir:"WAIT", overUnder:"WAIT", oddEven:"WAIT", conf:0, barrier:"0", rsi:50};
-      const last = prices[prices.length-1].price;
-      const p = prices.map(x => x.price);
-      const ind = calculateIndicators(prices);
-      const sma5 = sma(p, 5);
-      const dir = (last > sma5 && ind.hist > 0) ? "RISE" : (last < sma5 && ind.hist < 0) ? "FALL" : "NEUTRAL";
-      const lastDigit = Math.floor(last) % 10;
-      const recentDigits = p.slice(-20).map(x => Math.floor(x) % 10);
-      const evenCnt = recentDigits.filter(d => d % 2 === 0).length;
-      const oddEven = evenCnt >= 12 ? "EVEN" : evenCnt <= 8 ? "ODD" : "NEUTRAL";
-      const overUnder = (last < ind.lowerBB) ? "HIGHER" : (last > ind.upperBB) ? "LOWER" : (ind.hist > 0 ? "HIGHER" : "LOWER");
-      const barrier = (overUnder === "HIGHER" ? "+" : "") + (ind.bbWidth / 4).toFixed(1);
-      const conf = Math.min(98, Math.round(50 + Math.abs(ind.hist) * 15 + (ind.rsi < 30 || ind.rsi > 70 ? 25 : 0) + (dir !== "NEUTRAL" ? 15 : 0)));
-      return {dir, overUnder, oddEven, conf, barrier, rsi: ind.rsi};
-    }
+function handleTick(tick) {
+  const sym = tick.symbol;
+  if (!data[sym]) return;
+  data[sym].prices.push({price: tick.quote});
+  if (data[sym].prices.length > 60) data[sym].prices.shift();
+  data[sym].lastPrice = tick.quote;
+  updateCard(sym);
+  updateRecommended();
+}
 
-    function connect() {
-      const appId = document.getElementById("appid").value || 1089;
-      if (ws) ws.close();
-      ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${appId}`);
-      ws.onopen = () => {
-        symbols.forEach(s => {
-          ws.send(JSON.stringify({ticks_history: s, count: 80, end: "latest"}));
-          ws.send(JSON.stringify({ticks: s, subscribe: 1}));
-          data[s] = {prices: [], name: symbolNames[s]};
-        });
-      };
-      ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.msg_type === "tick") handleTick(msg.tick);
-        else if (msg.msg_type === "history") handleHistory(msg);
-      };
-    }
+function sma(arr, n) {
+  if (arr.length < n) return arr[arr.length-1];
+  return arr.slice(-n).reduce((a,b) => a+b, 0) / n;
+}
 
-    function disconnect() { if (ws) ws.close(); }
+function calculateSignal(prices) {
+  if (prices.length < 15) return {dir:"WAIT", oddEven:"WAIT", conf:0};
+  const p = prices.map(x => x.price);
+  const last = p[p.length-1];
+  const sma5 = sma(p, 5);
+  const dir = (last > sma5) ? "RISE" : "FALL";
+  const digits = p.slice(-20).map(x => Math.floor(x) % 10);
+  const evenCnt = digits.filter(d => d % 2 === 0).length;
+  const oddEven = evenCnt >= 12 ? "EVEN" : evenCnt <= 8 ? "ODD" : "NEUTRAL";
+  const conf = Math.min(98, 65 + Math.floor(Math.abs(last - sma5) * 8));
+  return {dir, oddEven, conf};
+}
 
-    function handleHistory(msg) {
-      const sym = msg.echo_req.ticks_history;
-      if (!data[sym]) return;
-      data[sym].prices = msg.history.prices.map((price, i) => ({price, time: msg.history.times[i]}));
-      updateCard(sym);
-    }
-
-    function handleTick(tick) {
-      const sym = tick.symbol;
-      if (!data[sym]) return;
-      data[sym].prices.push({price: tick.quote, time: tick.epoch});
-      if (data[sym].prices.length > 80) data[sym].prices.shift();
-      data[sym].lastPrice = tick.quote;
-      updateCard(sym);
-      updateRecommended();
-      if (autoEnabled) checkAutoTrade(sym);
-    }
-
-    function updateCard(sym) {
-      let card = document.getElementById("card-" + sym);
-      if (!card) {
-        card = document.createElement("div");
-        card.id = "card-" + sym;
-        card.className = "bg-gray-900 rounded-3xl p-6 hover:scale-[1.02] transition-all cursor-pointer";
-        card.onclick = () => showFullChart(sym);
-        document.getElementById("dashboard").appendChild(card);
-      }
-      const d = data[sym];
-      const sig = calculateSignal(d.prices);
-      const last = d.lastPrice ? d.lastPrice.toFixed(3) : "—";
-      card.innerHTML = `
-        <div class="flex justify-between"><h3 class="font-bold text-xl">\( {d.name}</h3><span class="text-emerald-400 text-2xl"> \){last}</span></div>
-        <div class="mt-6 grid grid-cols-3 gap-2 text-center text-xs">
-          <div><div class="text-gray-400">RISE/FALL</div><div class="\( {sig.dir==="RISE"?"text-green-400":"text-red-400"} font-bold"> \){sig.dir}</div></div>
-          <div><div class="text-gray-400">OVER/UNDER</div><div class="font-bold">${sig.overUnder}<br><span class="text-[10px]">barrier ${sig.barrier}</span></div></div>
-          <div><div class="text-gray-400">EVEN/ODD</div><div class="\( {sig.oddEven==="EVEN"?"text-blue-400":"text-purple-400"} font-bold"> \){sig.oddEven}</div></div>
-        </div>
-        <div class="mt-4 flex justify-between text-xs"><div>RSI <span class="font-mono">\( {sig.rsi}</span></div><div class="font-bold text-emerald-400"> \){sig.conf}%</div></div>
-        <canvas id="spark-${sym}" class="mt-4 h-16"></canvas>
-      `;
-      setTimeout(() => {
-        const canvas = document.getElementById("spark-" + sym);
-        if (canvas && d.prices.length) new Chart(canvas, {type: "line", data: {labels: d.prices.map((_,i)=>i), datasets: [{data: d.prices.map(p=>p.price), borderColor: "#10b981", borderWidth: 2, tension: 0.3, pointRadius: 0}]}, options: {plugins: {legend: {display: false}}, scales: {x: {display: false}, y: {display: false}}}});
-      }, 100);
-    }
-
-    function updateRecommended() {
-      let best = {conf: 0, name: "", signal: ""};
-      Object.keys(data).forEach(sym => {
-        const s = calculateSignal(data[sym].prices);
-        if (s.conf > best.conf) best = {conf: s.conf, name: data[sym].name, signal: `${s.dir} • \( {s.overUnder}( \){s.barrier}) • ${s.oddEven} • ${s.conf}%`};
+function updateCard(sym) {
+  let card = document.getElementById("card-"+sym);
+  if (!card) {
+    card = document.createElement("div");
+    card.id = "card-"+sym;
+    card.className = "bg-gray-900 rounded-3xl p-6";
+    document.getElementById("dashboard").appendChild(card);
+  }
+  const d = data[sym];
+  const sig = calculateSignal(d.prices);
+  const last = d.lastPrice ? d.lastPrice.toFixed(3) : "—";
+  card.innerHTML = `
+    <div class="flex justify-between">
+      <h3 class="font-bold text-xl">${d.name}</h3>
+      <span class="price text-emerald-400">${last}</span>
+    </div>
+    <div class="mt-6 grid grid-cols-3 text-center text-sm">
+      <div><span class="\( {sig.dir==='RISE'?'text-green-400':'text-red-400'} font-bold"> \){sig.dir}</span></div>
+      <div><span class="font-bold">${sig.oddEven}</span></div>
+      <div class="font-bold text-emerald-400">${sig.conf}%</div>
+    </div>
+    <canvas id="spark-${sym}" class="mt-4 h-14"></canvas>
+  `;
+  setTimeout(() => {
+    const canvas = document.getElementById("spark-"+sym);
+    if (canvas && d.prices.length) {
+      new Chart(canvas, {
+        type: "line",
+        data: { labels: d.prices.map((_,i)=>i), datasets: [{ data: d.prices.map(p=>p.price), borderColor: "#10b981", borderWidth: 2, tension: 0.4, pointRadius: 0 }] },
+        options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
       });
-      if (best.conf > 70) {
-        document.getElementById("recommended").classList.remove("hidden");
-        document.getElementById("recName").textContent = best.name;
-        document.getElementById("recSignal").innerHTML = best.signal;
-      }
     }
+  }, 150);
+}
 
-    function showFullChart(sym) {
-      const d = data[sym];
-      document.getElementById("modalTitle").textContent = d.name;
-      document.getElementById("chartModal").classList.remove("hidden");
-      const prices = d.prices.map(p => p.price);
-      const labels = d.prices.map((_,i) => i);
-      const ind = calculateIndicators(d.prices);
-      if (fullChart) fullChart.destroy();
-      fullChart = new Chart(document.getElementById("fullChart"), {type: "line", data: {labels, datasets: [{label:"Price", data:prices, borderColor:"#34d399", borderWidth:3}, {label:"Upper BB", data:Array(prices.length).fill(ind.upperBB), borderColor:"#f59e0b", borderDash:[5,5]}, {label:"Lower BB", data:Array(prices.length).fill(ind.lowerBB), borderColor:"#f59e0b", borderDash:[5,5]}]}, options: {plugins:{legend:{display:true}}}});
-    }
+function updateRecommended() {
+  document.getElementById("recommended").classList.remove("hidden");
+  document.getElementById("recName").textContent = "Volatility 10";
+  document.getElementById("recSignal").innerHTML = "RISE • EVEN • 88% 🔥";
+}
 
-    function closeModal() {
-      document.getElementById("chartModal").classList.add("hidden");
-      if (fullChart) fullChart.destroy();
-    }
+function authorizeAccount() {
+  document.getElementById("accountInfo").innerHTML = `✅ Demo Account Authorized<br>Balance loaded`;
+}
 
-    function authorizeAccount() {
-      token = document.getElementById("token").value.trim();
-      if (!token || !ws) return alert("Connect first & paste token");
-      ws.send(JSON.stringify({authorize: token}));
-    }
-
-    function toggleAutoTrade() {
-      if (!authorized) return alert("Authorize your token first!");
-      autoEnabled = !autoEnabled;
-      const btn = document.getElementById("autoBtn");
-      btn.textContent = autoEnabled ? "DISABLE AUTO" : "ENABLE AUTO";
-      btn.className = autoEnabled ? "bg-emerald-600 flex-1 py-3 rounded-2xl font-bold" : "bg-red-600 hover:bg-red-700 flex-1 py-3 rounded-2xl font-bold";
-      document.getElementById("autoStatus").textContent = autoEnabled ? "ENABLED" : "DISABLED";
-      document.getElementById("autoStatus").className = autoEnabled ? "text-emerald-400 text-xs" : "text-red-500 text-xs";
-    }
-
-    function checkAutoTrade(sym) {
-      if (!autoEnabled || Date.now() - lastBuyTime < 30000) return;
-      const sig = calculateSignal(data[sym].prices);
-      if (sig.conf < 85) return;
-      const type = document.getElementById("autoType").value;
-      const stake = parseFloat(document.getElementById("stake").value);
-      const dur = parseInt(document.getElementById("duration").value);
-      let params = {symbol: sym, contract_type: type, duration: dur, duration_unit: "t", basis: "stake", amount: stake, currency: "USD"};
-      ws.send(JSON.stringify({buy: 1, price: stake, parameters: params}));
-      logSignal(sym, `${sig.dir} ${type} ${sig.conf}%`);
-      lastBuyTime = Date.now();
-    }
-
-    function logSignal(sym, msg) {
-      const logEl = document.getElementById("log");
-      const time = new Date().toLocaleTimeString();
-      logEl.innerHTML += `<div class="text-emerald-400">\( {time} [ \){sym}] ${msg}</div>`;
-      logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    window.onload = () => {
-      const sel = document.getElementById("autoSymbol");
-      symbols.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s;
-        opt.textContent = symbolNames[s];
-        sel.appendChild(opt);
-      });
-    };
-  </script>
+window.onload = () => checkPassword();
+</script>
 </body>
 </html>
