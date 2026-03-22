@@ -6,10 +6,7 @@
   <title>Deriv Pro Signals</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    body { font-family: system-ui; background: #111827; color: white; }
-    .price { font-size: 1.85rem; font-weight: 700; }
-  </style>
+  <style>body{font-family:system-ui;background:#111827;color:white;}.price{font-size:1.85rem;font-weight:700;}</style>
 </head>
 <body class="bg-gray-950 text-white min-h-screen p-4">
 
@@ -30,12 +27,36 @@
     <button onclick="connect()" class="bg-green-500 px-8 py-3 rounded-xl font-bold">Connect Live</button>
   </div>
 
-  <!-- ACCOUNT -->
-  <div class="bg-gray-900 rounded-3xl p-6 mb-8">
-    <h3 class="font-bold mb-3">Your Deriv Account</h3>
-    <input id="token" value="dVNCVLTFRP7ED2" class="w-full bg-gray-800 px-5 py-4 rounded-2xl text-sm">
-    <button onclick="authorizeAccount()" class="mt-4 bg-blue-600 w-full py-3 rounded-2xl font-bold">Authorize (Demo)</button>
-    <div id="accountInfo" class="mt-4 text-sm text-emerald-400"></div>
+  <!-- ACCOUNT + AUTO TRADER -->
+  <div class="bg-gray-900 rounded-3xl p-6 mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div>
+      <h3 class="font-bold mb-3">Your Deriv Account</h3>
+      <input id="token" value="dVNCVLTFRP7ED2" class="w-full bg-gray-800 px-5 py-4 rounded-2xl text-sm">
+      <button onclick="authorizeAccount()" class="mt-3 bg-blue-600 w-full py-3 rounded-2xl font-bold">Authorize (Demo)</button>
+      <div id="accountInfo" class="mt-4 text-sm text-emerald-400"></div>
+    </div>
+    <div>
+      <h3 class="font-bold mb-3 flex items-center gap-2">🚀 Auto Trader <span id="autoStatus" class="text-red-500 text-xs">DISABLED</span></h3>
+      <div class="flex gap-3">
+        <select id="autoSymbol" class="bg-gray-800 px-4 py-3 rounded-2xl text-sm flex-1"></select>
+        <select id="autoType" class="bg-gray-800 px-4 py-3 rounded-2xl text-sm">
+          <option value="CALL">Rise / Higher</option>
+          <option value="PUT">Fall / Lower</option>
+          <option value="DIGITEVEN">Even</option>
+          <option value="DIGITODD">Odd</option>
+        </select>
+      </div>
+      <div class="flex gap-3 mt-3">
+        <input id="stake" value="10" class="bg-gray-800 px-5 py-3 rounded-2xl w-28 text-center">
+        <input id="duration" value="5" class="bg-gray-800 px-5 py-3 rounded-2xl w-28 text-center">
+        <button onclick="toggleAutoTrade()" id="autoBtn" class="bg-red-600 hover:bg-red-700 flex-1 py-3 rounded-2xl font-bold">ENABLE AUTO</button>
+      </div>
+      <p class="text-xs text-red-400 mt-2">⚠️ TEST WITH DEMO ONLY FIRST!</p>
+    </div>
+    <div>
+      <h3 class="font-bold mb-3">Signal Log</h3>
+      <div id="log" class="h-40 overflow-y-auto text-xs bg-gray-950 p-4 rounded-2xl font-mono"></div>
+    </div>
   </div>
 
   <!-- RECOMMENDED -->
@@ -90,7 +111,7 @@
 </div>
 
 <script>
-let ws = null;
+let ws = null, authorized = false, autoEnabled = false;
 let data = {};
 const symbols = ["R_10","R_25","R_50","R_75","R_100"];
 const symbolNames = {R_10:"Volatility 10", R_25:"Volatility 25", R_50:"Volatility 50", R_75:"Volatility 75", R_100:"Volatility 100"};
@@ -179,13 +200,7 @@ function updateCard(sym) {
   `;
   setTimeout(() => {
     const canvas = document.getElementById("spark-"+sym);
-    if (canvas && d.prices.length) {
-      new Chart(canvas, {
-        type: "line",
-        data: { labels: d.prices.map((_,i)=>i), datasets: [{ data: d.prices.map(p=>p.price), borderColor: "#10b981", borderWidth: 2, tension: 0.4, pointRadius: 0 }] },
-        options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
-      });
-    }
+    if (canvas && d.prices.length) new Chart(canvas, {type:"line", data:{labels:d.prices.map((_,i)=>i), datasets:[{data:d.prices.map(p=>p.price), borderColor:"#10b981", borderWidth:2, tension:0.4, pointRadius:0}]}, options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}}});
   }, 150);
 }
 
@@ -199,7 +214,22 @@ function authorizeAccount() {
   document.getElementById("accountInfo").innerHTML = `✅ Demo Account Authorized<br>Balance loaded`;
 }
 
-window.onload = () => checkPassword();
+function toggleAutoTrade() {
+  autoEnabled = !autoEnabled;
+  document.getElementById("autoBtn").textContent = autoEnabled ? "DISABLE AUTO" : "ENABLE AUTO";
+  document.getElementById("autoBtn").className = autoEnabled ? "bg-emerald-600 flex-1 py-3 rounded-2xl font-bold" : "bg-red-600 hover:bg-red-700 flex-1 py-3 rounded-2xl font-bold";
+}
+
+window.onload = () => {
+  const sel = document.getElementById("autoSymbol");
+  symbols.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = symbolNames[s];
+    sel.appendChild(opt);
+  });
+  checkPassword();
+};
 </script>
 </body>
 </html>
