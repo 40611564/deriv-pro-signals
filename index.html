@@ -66,6 +66,21 @@
     <div id="recSignal" class="text-3xl mt-4"></div>
   </div>
 
+  <!-- CUSTOMIZABLE BLOCKS -->
+  <section class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      <div>
+        <p class="text-emerald-400 text-xs font-bold uppercase tracking-widest">Page builder</p>
+        <h2 class="text-2xl font-bold">Customizable blocks</h2>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="addBlock('purchase')" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 px-4 py-2 rounded-xl font-bold text-sm">+ Purchase block</button>
+        <button onclick="addBlock('info')" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl font-bold text-sm">+ Info block</button>
+      </div>
+    </div>
+    <div id="customBlocks" class="space-y-4"></div>
+  </section>
+
   <!-- DASHBOARD -->
   <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
 
@@ -220,6 +235,61 @@ function toggleAutoTrade() {
   document.getElementById("autoBtn").className = autoEnabled ? "bg-emerald-600 flex-1 py-3 rounded-2xl font-bold" : "bg-red-600 hover:bg-red-700 flex-1 py-3 rounded-2xl font-bold";
 }
 
+let customBlocks = [
+  {id: 1, type: "purchase", title: "Premium Signals", description: "Get access to advanced signals and execution tools.", price: "29"},
+  {id: 2, type: "info", title: "How it works", description: "Connect your demo account, choose a market, and follow the live signal."}
+];
+let nextBlockId = 3;
+
+function addBlock(type) {
+  customBlocks.push(type === "purchase"
+    ? {id: nextBlockId++, type, title: "New purchase option", description: "Describe what customers receive.", price: "49"}
+    : {id: nextBlockId++, type, title: "New information", description: "Add helpful information for your users."});
+  renderCustomBlocks();
+}
+
+function updateBlock(id, field, value) {
+  const block = customBlocks.find(item => item.id === id);
+  if (block) block[field] = value;
+}
+
+function moveBlock(id, direction) {
+  const index = customBlocks.findIndex(item => item.id === id);
+  const target = index + direction;
+  if (index < 0 || target < 0 || target >= customBlocks.length) return;
+  [customBlocks[index], customBlocks[target]] = [customBlocks[target], customBlocks[index]];
+  renderCustomBlocks();
+}
+
+function removeBlock(id) {
+  customBlocks = customBlocks.filter(item => item.id !== id);
+  renderCustomBlocks();
+}
+
+function renderCustomBlocks() {
+  const container = document.getElementById("customBlocks");
+  container.innerHTML = customBlocks.map((block, index) => `
+    <article class="bg-gray-900 rounded-3xl p-5 border border-gray-800">
+      <div class="flex items-start gap-3">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs uppercase tracking-widest font-bold ${block.type === 'purchase' ? 'text-emerald-400' : 'text-blue-400'}">${block.type}</span>
+            <span class="text-xs text-gray-500">Block ${index + 1}</span>
+          </div>
+          <input value="${block.title}" onchange="updateBlock(${block.id}, 'title', this.value); renderCustomBlocks()" class="w-full bg-gray-800 rounded-xl px-4 py-3 font-bold text-lg mb-2" aria-label="Block title">
+          <textarea onchange="updateBlock(${block.id}, 'description', this.value); renderCustomBlocks()" class="w-full bg-gray-800 rounded-xl px-4 py-3 text-sm text-gray-300 min-h-20" aria-label="Block description">${block.description}</textarea>
+          ${block.type === 'purchase' ? `<div class="flex flex-col sm:flex-row gap-3 mt-3"><label class="flex-1 text-xs text-gray-400">Price<input value="${block.price}" onchange="updateBlock(${block.id}, 'price', this.value); renderCustomBlocks()" type="number" min="0" step="0.01" class="block w-full bg-gray-800 rounded-xl px-4 py-3 text-white mt-1" aria-label="Purchase price"></label><button onclick="purchaseBlock(${block.id})" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 rounded-xl px-6 py-3 font-bold self-end">Purchase</button></div>` : ''}
+        </div>
+        <div class="flex sm:flex-col gap-1"><button onclick="moveBlock(${block.id}, -1)" class="bg-gray-800 rounded-lg px-3 py-2" aria-label="Move block up">↑</button><button onclick="moveBlock(${block.id}, 1)" class="bg-gray-800 rounded-lg px-3 py-2" aria-label="Move block down">↓</button><button onclick="removeBlock(${block.id})" class="text-red-400 rounded-lg px-3 py-2" aria-label="Remove block">×</button></div>
+      </div>
+    </article>`).join('');
+}
+
+function purchaseBlock(id) {
+  const block = customBlocks.find(item => item.id === id);
+  if (block) alert(`Purchase selected: ${block.title} ($${block.price})`);
+}
+
 window.onload = () => {
   const sel = document.getElementById("autoSymbol");
   symbols.forEach(s => {
@@ -228,6 +298,7 @@ window.onload = () => {
     opt.textContent = symbolNames[s];
     sel.appendChild(opt);
   });
+  renderCustomBlocks();
   checkPassword();
 };
 </script>
